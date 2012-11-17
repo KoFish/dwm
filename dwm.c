@@ -871,11 +871,18 @@ createmon(void) {
 		die("fatal: could not malloc() %u bytes\n", sizeof(Pertag));
 	m->pertag->curtag = m->pertag->prevtag = 1;
 	for(i=0; i <= LENGTH(tags); i++) {
+        /* init nmaster */
 		m->pertag->nmasters[i] = m->nmaster;
+
+        /* init mfacts */
 		m->pertag->mfacts[i] = m->mfact;
+
+        /* init layouts */
 		m->pertag->ltidxs[i][0] = m->lt[0];
 		m->pertag->ltidxs[i][1] = m->lt[1];
 		m->pertag->sellts[i] = m->sellt;
+
+        /* init showbar */
 		m->pertag->showbars[i] = m->showbar;
 	}
 	return m;
