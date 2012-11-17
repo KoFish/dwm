@@ -8,10 +8,17 @@ static const char normfgcolor[]     = "#bbbbbb";
 static const char selbordercolor[]  = "#005577";
 static const char selbgcolor[]      = "#005577";
 static const char selfgcolor[]      = "#eeeeee";
+static const char floatnormbordercolor[] = "#777777";
+static const char floatselbordercolor[] = "#999999";
+static const char urgbordercolor[]  = "#ff0000";
 static const unsigned int borderpx  = 1;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
+static const unsigned int systrayspacing = 2;   /* systray spacing */
 static const Bool showbar           = True;     /* False means no bar */
 static const Bool topbar            = True;     /* False means bottom bar */
+static const Bool showsystray       = True;
+static const Bool viewontag         = True;
+static const int  topspace          = 15;
 
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
@@ -36,14 +43,16 @@ static const Layout layouts[] = {
 	{ "[]=",      tile },    /* first entry is default */
 	{ "><>",      NULL },    /* no layout function means floating behavior */
 	{ "[M]",      monocle },
+	{ "TTT",      bstack },
+	{ "===",      bstackhoriz },
 };
 
 /* key definitions */
 #define MODKEY Mod1Mask
 #define TAGKEYS(KEY,TAG) \
-	{ MODKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
+	{ MODKEY,                       KEY,      comboview,           {.ui = 1 << TAG} }, \
 	{ MODKEY|ControlMask,           KEY,      toggleview,     {.ui = 1 << TAG} }, \
-	{ MODKEY|ShiftMask,             KEY,      tag,            {.ui = 1 << TAG} }, \
+	{ MODKEY|ShiftMask,             KEY,      combotag,            {.ui = 1 << TAG} }, \
 	{ MODKEY|ControlMask|ShiftMask, KEY,      toggletag,      {.ui = 1 << TAG} },
 
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
@@ -88,6 +97,35 @@ static Key keys[] = {
 	TAGKEYS(                        XK_8,                      7)
 	TAGKEYS(                        XK_9,                      8)
 	{ MODKEY|ShiftMask,             XK_q,      quit,           {0} },
+
+	{ MODKEY,                       XK_aring,  explace,                {.ui = EX_NW }},
+	{ MODKEY,                       XK_comma,  explace,                {.ui = EX_N  }},
+	{ MODKEY,                       XK_period, explace,                {.ui = EX_NE }},
+	{ MODKEY,                       XK_a,      explace,                {.ui = EX_W  }},
+	{ MODKEY,                       XK_o,      explace,                {.ui = EX_C  }},
+	{ MODKEY,                       XK_e,      explace,                {.ui = EX_E  }},
+	{ MODKEY,                       XK_adiaeresis, explace,            {.ui = EX_SW }},
+	{ MODKEY,                       XK_q,      explace,                {.ui = EX_S  }},
+	{ MODKEY,                       XK_j,      explace,                {.ui = EX_SE }},
+
+	{ MODKEY|ShiftMask,             XK_comma,  exresize,               {.v = (int []){   0,  25 }}},
+	{ MODKEY|ShiftMask,             XK_q,      exresize,               {.v = (int []){   0, -25 }}},
+	{ MODKEY|ShiftMask,             XK_e,      exresize,               {.v = (int []){  25,   0 }}},
+	{ MODKEY|ShiftMask,             XK_a,      exresize,               {.v = (int []){ -25,   0 }}},
+	{ MODKEY|ShiftMask,             XK_o,      exresize,               {.v = (int []){  25,  25 }}},
+	{ MODKEY|ControlMask,           XK_o,      exresize,               {.v = (int []){ -25, -25 }}},
+
+	{ MODKEY,                       XK_s,      togglehorizontalexpand, {.i = +1} },
+	{ MODKEY|ShiftMask,             XK_s,      togglehorizontalexpand, {.i =  0} },
+	{ MODKEY,                       XK_h,      togglehorizontalexpand, {.i = -1} },
+	{ MODKEY|ShiftMask,             XK_h,      togglehorizontalexpand, {.i =  0} },
+	{ MODKEY,                       XK_n,      toggleverticalexpand,   {.i = +1} },
+	{ MODKEY|ShiftMask,             XK_n,      toggleverticalexpand,   {.i =  0} },
+	{ MODKEY,                       XK_t,      toggleverticalexpand,   {.i = -1} },
+	{ MODKEY|ShiftMask,             XK_t,      toggleverticalexpand,   {.i =  0} },
+	{ MODKEY|ControlMask,           XK_v,      togglemaximize,         {.i = -1} },
+	{ MODKEY|ShiftMask,             XK_v,      togglemaximize,         {.i = +1} },
+	{ MODKEY,                       XK_v,      togglemaximize,         {.i =  0} },
 };
 
 /* button definitions */
