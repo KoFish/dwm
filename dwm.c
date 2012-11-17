@@ -89,11 +89,14 @@ struct Client {
 	char name[256];
 	float mina, maxa;
 	int x, y, w, h;
+	int sfx, sfy, sfw, sfh; /* stored float geometry, used on mode revert */
 	int oldx, oldy, oldw, oldh;
 	int basew, baseh, incw, inch, maxw, maxh, minw, minh;
 	int bw, oldbw;
 	unsigned int tags;
-	Bool isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen;
+	unsigned char expandmask;
+	int expandx1, expandy1, expandx2, expandy2;
+	Bool wasfloating, isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen;
 	Client *next;
 	Client *snext;
 	Monitor *mon;
@@ -1132,8 +1135,14 @@ manage(Window w, XWindowAttributes *wa) {
 	updatewindowtype(c);
 	updatesizehints(c);
 	updatewmhints(c);
+	c->sfx = c->x;
+	c->sfy = c->y;
+	c->sfw = c->w;
+	c->sfh = c->h;
 	XSelectInput(dpy, w, EnterWindowMask|FocusChangeMask|PropertyChangeMask|StructureNotifyMask);
 	grabbuttons(c, False);
+	c->wasfloating = False;
+	c->expandmask = 0;
 	if(!c->isfloating)
 		c->isfloating = c->oldstate = trans != None || c->isfixed;
 	if(c->isfloating)
@@ -1343,6 +1352,7 @@ resizeclient(Client *c, int x, int y, int w, int h) {
 	c->oldy = c->y; c->y = wc.y = y;
 	c->oldw = c->w; c->w = wc.width = w;
 	c->oldh = c->h; c->h = wc.height = h;
+	c->expandmask = 0;
 	wc.border_width = c->bw;
 	XConfigureWindow(dpy, c->win, CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
 	configure(c);
@@ -1463,6 +1473,7 @@ scan(void) {
 
 void
 sendmon(Client *c, Monitor *m) {
+	Monitor *oldm = selmon;
 	if(c->mon == m)
 		return;
 	unfocus(c, True);
@@ -1472,8 +1483,11 @@ sendmon(Client *c, Monitor *m) {
 	c->tags = m->tagset[m->seltags]; /* assign tags of target monitor */
 	attach(c);
 	attachstack(c);
-	focus(NULL);
-	arrange(NULL);
+	if (oldm != m)
+		arrange(oldm);
+	arrange(m);
+	focus(c);
+	restack(m);
 }
 
 void
@@ -1549,8 +1563,18 @@ setfullscreen(Client *c, Bool fullscreen) {
 
 void
 setlayout(const Arg *arg) {
-	if(!arg || !arg->v || arg->v != selmon->lt[selmon->sellt])
+	if(!arg || !arg->v || arg->v != selmon->lt[selmon->sellt]) {
 		selmon->sellt ^= 1;
+		if (!selmon->lt[selmon->sellt]->arrange) {
+			for (Client *c = selmon->clients ; c ; c = c->next) {
+				if(!c->isfloating) {
+					/*restore last known float dimensions*/
+					resize(c, selmon->mx + c->sfx, selmon->my + c->sfy,
+					       c->sfw, c->sfh, False);
+				}
+			}
+		}
+	}
 	if(arg && arg->v)
 		selmon->lt[selmon->sellt] = (Layout *)arg->v;
 	strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol, sizeof selmon->ltsymbol);
@@ -1732,9 +1756,19 @@ togglefloating(const Arg *arg) {
 	if(selmon->sel->isfullscreen) /* no support for fullscreen windows */
 		return;
 	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
-	if(selmon->sel->isfloating)
-		resize(selmon->sel, selmon->sel->x, selmon->sel->y,
-		       selmon->sel->w, selmon->sel->h, False);
+	if(selmon->sel->isfloating) {
+		/*restore last known float dimensions*/
+		resize(selmon->sel, selmon->mx + selmon->sel->sfx, selmon->my + selmon->sel->sfy,
+		       selmon->sel->sfw, selmon->sel->sfh, False);
+	} else {
+		if (selmon->sel->isfullscreen)
+			setfullscreen(selmon->sel, False);
+		/*save last known float dimensions*/
+		selmon->sel->sfx = selmon->sel->x - selmon->mx;
+		selmon->sel->sfy = selmon->sel->y - selmon->my;
+		selmon->sel->sfw = selmon->sel->w;
+		selmon->sel->sfh = selmon->sel->h;
+	}
 	arrange(selmon);
 }
 
