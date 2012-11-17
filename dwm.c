@@ -1243,8 +1243,9 @@ movemouse(const Arg *arg) {
 		case MotionNotify:
 			nx = ocx + (ev.xmotion.x - x);
 			ny = ocy + (ev.xmotion.y - y);
-			if(nx >= selmon->wx && nx <= selmon->wx + selmon->ww
-			&& ny >= selmon->wy && ny <= selmon->wy + selmon->wh) {
+			if ((m = recttomon(nx, ny, c->w, c->h))) {
+				if (m != selmon) 
+					sendmon(c, m);
 				if(abs(selmon->wx - nx) < snap)
 					nx = selmon->wx;
 				else if(abs((selmon->wx + selmon->ww) - (nx + WIDTH(c))) < snap)
@@ -1389,9 +1390,9 @@ resizemouse(const Arg *arg) {
 		case MotionNotify:
 			nw = MAX(ev.xmotion.x - ocx - 2 * c->bw + 1, 1);
 			nh = MAX(ev.xmotion.y - ocy - 2 * c->bw + 1, 1);
-			if(c->mon->wx + nw >= selmon->wx && c->mon->wx + nw <= selmon->wx + selmon->ww
-			&& c->mon->wy + nh >= selmon->wy && c->mon->wy + nh <= selmon->wy + selmon->wh)
-			{
+			if ((m = recttomon(c->x, c->y, nw, nh))) {
+				if (m != selmon) 
+					sendmon(c, m);
 				if(!c->isfloating && selmon->lt[selmon->sellt]->arrange
 				&& (abs(nw - c->w) > snap || abs(nh - c->h) > snap))
 					togglefloating(NULL);
