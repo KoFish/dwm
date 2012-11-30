@@ -1,0 +1,41 @@
+# Patches
+
+ + exresize
+
+    Resize, move and temporarily maximize clients using your keyboard.
+
+ + switchstack
+
+    Switch between cycling through floating and tiled clients.
+
+ + combo 
+
+    Selecting several tags by pressing corresponing keys at the same time.
+
+ + float border color 
+
+    Specify colors for borders when clients are floating.
+
+ + urgentborder
+
+    Highlights urgent borders in specified colors
+
+ + pertag - not working
+
+    Different layout, mwfact, barpos and nmaster per tag
+
+ + spawn cwd
+
+    Spawn applications copies cwd from the client that currently has focus.
+
+ + statusallmons
+
+    Draw the statusbar on all monitors
+
+ + systray
+
+    Adds a systray on the right side of the bar.
+
+ + viewontag
+
+    Switches to the tag where you move a client.
