@@ -273,7 +273,7 @@ static void shiftview(const Arg *arg);
 static void showhide(Client *c);
 static void sigchld(int unused);
 static void spawn(const Arg *arg);
-static void swapstack();
+static void switchstack();
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static int textnw(const char *text, unsigned int len);
@@ -1149,10 +1149,6 @@ focusstack(const Arg *arg) {
 	if(!selmon->sel)
 		return;
 	if(arg->i > 0) {
-		for(c = selmon->sel->next; c && !ISVISIBLE(c); c = c->next);
-		if(!c)
-			for(c = selmon->clients; c && !ISVISIBLE(c); c = c->next);
-
 		c = selmon->sel;
 		detach(c);
 		attachback(c);
@@ -2099,7 +2095,7 @@ spawn(const Arg *arg) {
 }
 
 void
-swapstack(){
+switchstack(){
 	Client *c = NULL;
 	for(c = selmon->clients; c && (!ISVISIBLE(c) || c->isfloating == selmon->sel->isfloating); c = c->next);
 	if (c) {
