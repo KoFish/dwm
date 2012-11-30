@@ -197,6 +197,7 @@ static Bool applysizehints(Client *c, int *x, int *y, int *w, int *h, Bool inter
 static void arrange(Monitor *m);
 static void arrangemon(Monitor *m);
 static void attach(Client *c);
+static void attachback(Client *c);
 static void attachstack(Client *c);
 static void buttonpress(XEvent *e);
 static void bstackhoriz(Monitor *m);
@@ -272,6 +273,7 @@ static void shiftview(const Arg *arg);
 static void showhide(Client *c);
 static void sigchld(int unused);
 static void spawn(const Arg *arg);
+static void swapstack();
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static int textnw(const char *text, unsigned int len);
@@ -487,6 +489,18 @@ void
 attach(Client *c) {
 	c->next = c->mon->clients;
 	c->mon->clients = c;
+}
+
+void
+attachback(Client *c) {
+	Client *i;
+	if (c->mon->clients) {
+		for (i = c->mon->clients ; i->next ; i = i->next);
+		i->next = c;
+	} else 
+		c->mon->clients = c;
+
+	c->next = NULL;
 }
 
 void
@@ -1087,8 +1101,10 @@ focus(Client *c) {
 			selmon = c->mon;
 		if(c->isurgent)
 			clearurgent(c);
+		detach(c);
 		detachstack(c);
 		attachstack(c);
+		attach(c);
 		grabbuttons(c, True);
 		if (c->isfloating)
 			XSetWindowBorder(dpy, c->win, dc.sel[ColBorderFloat].pixel);
@@ -1136,14 +1152,19 @@ focusstack(const Arg *arg) {
 		for(c = selmon->sel->next; c && !ISVISIBLE(c); c = c->next);
 		if(!c)
 			for(c = selmon->clients; c && !ISVISIBLE(c); c = c->next);
+
+		c = selmon->sel;
+		detach(c);
+		attachback(c);
+		for (c = selmon->clients ; c && (c->isfloating != selmon->sel->isfloating || !ISVISIBLE(c)) ; c = c->next);
 	}
 	else {
 		for(i = selmon->clients; i != selmon->sel; i = i->next)
-			if(ISVISIBLE(i))
+			if(ISVISIBLE(i) && i->isfloating == selmon->sel->isfloating)
 				c = i;
 		if(!c)
 			for(; i; i = i->next)
-				if(ISVISIBLE(i))
+				if(ISVISIBLE(i) && i->isfloating == selmon->sel->isfloating)
 					c = i;
 	}
 	if(c) {
@@ -2074,6 +2095,16 @@ spawn(const Arg *arg) {
 		fprintf(stderr, "dwm: execvp %s", ((char **)arg->v)[0]);
 		perror(" failed");
 		exit(EXIT_SUCCESS);
+	}
+}
+
+void
+swapstack(){
+	Client *c = NULL;
+	for(c = selmon->clients; c && (!ISVISIBLE(c) || c->isfloating == selmon->sel->isfloating); c = c->next);
+	if (c) {
+		focus(c);
+		arrange(selmon);
 	}
 }
 
