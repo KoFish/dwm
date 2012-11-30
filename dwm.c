@@ -988,16 +988,16 @@ drawbar(Monitor *m) {
 	drawtext(m->ltsymbol, dc.norm, False);
 	dc.x += dc.w;
 	x = dc.x;
-		dc.w = TEXTW(stext);
-		dc.x = m->ww - dc.w;
+	dc.w = TEXTW(stext);
+	dc.x = m->ww - dc.w;
 	if (showsystray && m == selmon) {
 		dc.x -= getsystraywidth();
 	}
-		if(dc.x < x) {
-			dc.x = x;
-			dc.w = m->ww - x;
-		}
-		drawtext(stext, dc.norm, False);
+	if(dc.x < x) {
+		dc.x = x;
+		dc.w = m->ww - x;
+	}
+	drawtext(stext, dc.norm, False);
 	if((dc.w = dc.x - x) > bh) {
 		dc.x = x;
 		if(m->sel) {
@@ -1109,7 +1109,7 @@ focus(Client *c) {
 		if (c->isfloating)
 			XSetWindowBorder(dpy, c->win, dc.sel[ColBorderFloat].pixel);
 		else
-		XSetWindowBorder(dpy, c->win, dc.sel[ColBorder].pixel);
+			XSetWindowBorder(dpy, c->win, dc.sel[ColBorder].pixel);
 		setfocus(c);
 	}
 	else {
@@ -1868,8 +1868,8 @@ setfocus(Client *c) {
 	if(!c->neverfocus) {
 		XSetInputFocus(dpy, c->win, RevertToPointerRoot, CurrentTime);
 		XChangeProperty(dpy, root, netatom[NetActiveWindow],
- 		                XA_WINDOW, 32, PropModeReplace,
- 		                (unsigned char *) &(c->win), 1);
+		                XA_WINDOW, 32, PropModeReplace,
+		                (unsigned char *) &(c->win), 1);
 	}
 	sendevent(c->win, wmatom[WMTakeFocus], NoEventMask, wmatom[WMTakeFocus], CurrentTime, 0, 0, 0);
 }
