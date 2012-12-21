@@ -7,10 +7,11 @@
 #define IS_FORCED(q, w) IS_SET((q << 1), w)
 
 #define EXPANDALL       (EXPAND_LEFT | EXPAND_RIGHT | EXPAND_UP | EXPAND_DOWN)
-#define UNEXPAND       (EXPANDALL << 1) // Force all directions to 0
+#define UNEXPAND        (EXPANDALL << 1) // Force all directions to 0
 #define FORCE_EXPANDALL ~0 // Force expand in all directions
 
 enum { EX_NW, EX_N, EX_NE, EX_W, EX_C, EX_E, EX_SW, EX_S, EX_SE };
+enum { EX_UP=1, EX_RIGHT=2, EX_DOWN=4, EX_LEFT=8 };
 
 void expand(unsigned char mask);
 
@@ -19,6 +20,52 @@ void toggleverticalexpand(const Arg *arg);
 void togglehorizontalexpand(const Arg *arg);
 void exresize(const Arg *arg);
 void explace(const Arg *arg);
+void exfocus(const Arg *arg);
+
+Client *dirtoclient(char dir) {
+    Client *c = selmon->sel, *r = NULL, *i;
+    int cx, cy, dist = INT_MAX;
+    if (!c) return NULL;
+    cx = c->x+c->w/2; cy = c->y+c->h/2;
+    for (i = selmon->clients ; i ; i = i->next) {
+        if (i == c) continue;
+        if (ISVISIBLE(i)) {
+            int dx = i->x+i->w/2 - cx, dy = i->y+i->h/2 - cy;
+            if ((dir&EX_UP    && (dy < 0))||(dir&EX_RIGHT && (dx > 0))||
+                (dir&EX_DOWN  && (dy > 0))||(dir&EX_LEFT  && (dx < 0))){
+                if ((abs(dx) < snap) && (abs(dy) < snap)) continue;
+                if (dir&(EX_UP|EX_DOWN) && (dist > abs(dy))) {
+                    dist = abs(dy);
+                    r = i;
+                } else if (dir&(EX_RIGHT|EX_LEFT) && (dist > abs(dx))) {
+                    dist = abs(dx);
+                    r = i;
+                }
+            }
+        }
+    }
+    return r;
+}
+
+void
+exfocus(const Arg *arg) {
+    Client *c;
+    if (arg->i == 0) {
+        Client *i = selmon->sel;
+        int ix, iy;
+        if (!i) return;
+		detach(i);
+		attachback(i);
+        ix = i->x + i->w/2; iy = i->y + i->h/2;
+		for (c = selmon->clients ; c && (!ISVISIBLE(c) || abs(c->x + c->w/2 - ix) > snap || abs(c->y + c->h/2 - iy) > snap) ; c = c->next); 
+    } else {
+        c = dirtoclient(arg->i);
+    }
+    if (c) {
+        focus(c);
+        restack(selmon);
+    }
+}
 
 void
 exresize(const Arg *arg) {
@@ -70,7 +117,7 @@ exresize(const Arg *arg) {
 
 void
 explace(const Arg *arg) {
-	Client *c;
+	Client *c, *i;
 	int nx, ny;
 
 	c = selmon->sel;
@@ -88,6 +135,20 @@ explace(const Arg *arg) {
 	if (ny < 0) ny = selmon->wy;
 	else if (ny > 0) ny = selmon->wy + selmon->wh - c->h - c->bw*2;
 	else ny = selmon->wy + selmon->wh/2 - c->h/2;
+
+    for (i = selmon->clients ; i ; i = i->next) {
+        if (i == c) continue;
+        if (ISVISIBLE(i) && ((i->x < nx + c->w) && (nx < i->x + i->w) &&  (i->y < ny + c->h) &&  (ny < i->y + i->h))) {
+            if (abs(ny - (i->y + i->h)) < snap*2) 
+                ny = MIN(i->y + i->h, selmon->wy + selmon->wh - c->h - c->bw*2);
+            if (abs(ny + c->h - i->y) < snap*2) 
+                ny = MAX(i->y - c->h, selmon->wy);
+            if (abs(nx - (i->x + i->w)) < snap*2) 
+                nx = MIN(i->x + i->w, selmon->wx + selmon->ww - c->w - c->bw*2);
+            if (abs(nx + c->w - i->x) < snap*2) 
+                nx = MAX(i->x - c->w, selmon->wx);
+        }
+    }
 
 	resize(c, nx, ny, c->w, c->h, True);
 	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w/2, c->h/2);
