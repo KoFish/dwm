@@ -24,7 +24,7 @@ void exfocus(const Arg *arg);
 
 Client *dirtoclient(char dir) {
     Client *c = selmon->sel, *r = NULL, *i;
-    int cx, cy, dist = INT_MAX;
+    int cx, cy, dist = INT_MAX, adist = INT_MAX;
     if (!c) return NULL;
     cx = c->x+c->w/2; cy = c->y+c->h/2;
     for (i = selmon->clients ; i ; i = i->next) {
@@ -34,12 +34,22 @@ Client *dirtoclient(char dir) {
             if ((dir&EX_UP    && (dy < 0))||(dir&EX_RIGHT && (dx > 0))||
                 (dir&EX_DOWN  && (dy > 0))||(dir&EX_LEFT  && (dx < 0))){
                 if ((abs(dx) < snap) && (abs(dy) < snap)) continue;
-                if (dir&(EX_UP|EX_DOWN) && (dist > abs(dy))) {
-                    dist = abs(dy);
-                    r = i;
-                } else if (dir&(EX_RIGHT|EX_LEFT) && (dist > abs(dx))) {
-                    dist = abs(dx);
-                    r = i;
+                if (dir&(EX_UP|EX_DOWN)) {
+                    int ndist = abs(dy), nadist = abs(dx);
+                    if (((abs(dist - ndist) < snap) && (nadist < adist)) || (dist > ndist)) {
+                        dist = ndist;
+                        adist = nadist;
+                        r = i;
+                    }
+                } else if (dir&(EX_RIGHT|EX_LEFT)) {
+                    if (dist > abs(dx)) {
+                        int ndist = abs(dx), nadist = abs(dy);
+                        if (((abs(dist - ndist) < snap) && (nadist < adist)) || (dist > ndist)) {
+                            dist = ndist;
+                            adist = nadist;
+                            r = i;
+                        }
+                    }
                 }
             }
         }
